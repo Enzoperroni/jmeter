@@ -414,7 +414,7 @@
                 </elementProp>
                 <elementProp name="influxdbUrl" elementType="Argument">
                   <stringProp name="Argument.name">influxdbUrl</stringProp>
-                  <stringProp name="Argument.value">http://localhost:32768/api/v2/write?org=clubinho&amp;bucket=jmeter</stringProp>
+                  <stringProp name="Argument.value">http://influx:8086/api/v2/write?org=clubinho&amp;bucket=jmeter</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                 </elementProp>
                 <elementProp name="application" elementType="Argument">
