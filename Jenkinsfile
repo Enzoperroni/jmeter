@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    environment {
+        JMETER_HOME = '/opt/apache-jmeter-5.6.3'
+        PATH = "${JMETER_HOME}/bin:${env.PATH}"
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -23,19 +28,35 @@ pipeline {
             }
         }
 
+        stage('Instalar JMeter se necessário') {
+            steps {
+                sh '''
+                if [ ! -d "$JMETER_HOME" ]; then
+                  echo "Baixando JMeter..."
+                  apt-get update
+                  apt-get install -y wget unzip default-jre
+                  wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz
+                  tar -xzf apache-jmeter-5.6.3.tgz
+                  mv apache-jmeter-5.6.3 /opt/apache-jmeter-5.6.3
+                else
+                  echo "JMeter já instalado."
+                fi
+
+                jmeter -v
+                '''
+            }
+        }
+
         stage('Rodar teste JMeter') {
             steps {
                 sh '''
                 echo "Iniciando execução do JMeter..."
 
-                docker run --rm \
-                  --network monitoring-net \
-                  -v "$WORKSPACE/testes:/tests" \
-                  justb4/jmeter \
+                jmeter \
                   -n \
-                  -t "/tests/Post Pet.jmx" \
-                  -l /tests/resultados.jtl \
-                  -j /tests/jmeter.log
+                  -t "testes/Post Pet.jmx" \
+                  -l "testes/resultados.jtl" \
+                  -j "testes/jmeter.log"
 
                 echo "Execução do JMeter finalizada."
 
@@ -51,16 +72,7 @@ pipeline {
 
     post {
         always {
-            echo 'Arquivando resultados do JMeter...'
             archiveArtifacts artifacts: 'testes/*.jtl,testes/*.log', fingerprint: true
-        }
-
-        success {
-            echo 'Pipeline executado com sucesso.'
-        }
-
-        failure {
-            echo 'Pipeline falhou. Verifique o console output e o arquivo jmeter.log.'
         }
     }
 }
